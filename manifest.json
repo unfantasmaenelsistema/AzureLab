@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Microsoft Azure",
-  "short_name": "Azure",
+  "name": "AzureLab (simulador educativo)",
+  "short_name": "AzureLab",
   "description": "Laboratorio interactivo del portal de Azure y de Cloud Shell. Se ejecuta por completo en el navegador y funciona sin conexión.",
   "start_url": "./",
   "scope": "./",
