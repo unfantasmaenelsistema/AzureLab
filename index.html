@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inicio - Microsoft Azure</title>
+    <title>AzureLab · Simulador educativo del portal de Azure</title>
     <meta name="description" content="Simulador interactivo 100% cliente del portal de Microsoft Azure y Azure Cloud Shell (CLI) con persistencia en localStorage." />
-    <meta property="og:title" content="Microsoft Azure - Simulador Educativo" />
+    <meta property="og:title" content="AzureLab · Simulador educativo del portal de Azure" />
     <meta property="og:description" content="Simulador interactivo 100% cliente del portal de Microsoft Azure y Azure Cloud Shell (CLI) con persistencia en localStorage." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -267,7 +267,7 @@
         margin-right: 6px;
       }
 
-      /* ==================== ESTILOS RÉPLICA LOGIN.MICROSOFTONLINE.COM ==================== */
+      /* ==================== ESTILOS DE LA ANTIGUA PANTALLA DE ENTRADA (sin uso) ==================== */
       .ms-login-bg {
         background-color: #f2f2f2;
         background-image:
@@ -450,267 +450,43 @@
   </head>
   <body class="theme-azure-dark bg-[#111111] text-[#f3f2f1] h-screen w-screen overflow-hidden flex flex-col select-none">
 
-    <!-- ==================== 0. PUERTA DE ENTRADA: RÉPLICA EXACTA DE LOGIN.MICROSOFTONLINE.COM ==================== -->
+    <!-- ==================== 0. PORTADA DEL SIMULADOR (sin inicio de sesión ni contraseñas) ==================== -->
     <div
       id="ms-login-overlay"
-      class="ms-login-bg fixed inset-0 z-[200] flex flex-col justify-between items-center p-4 overflow-y-auto select-text"
-      aria-label="Iniciar sesión en su cuenta de Microsoft Azure"
+      class="fixed inset-0 z-[200] flex items-center justify-center p-4 overflow-y-auto bg-[#111111] select-text"
+      role="dialog"
+      aria-labelledby="azl-welcome-title"
     >
-      <!-- Espaciador superior para centrado vertical -->
-      <div class=" flex-1"></div>
-
-      <!-- Contenedor central (Tarjeta Blanca Principal + Opciones de inicio de sesión) -->
-      <div class="w-full flex flex-col items-center gap-5 my-6">
-        <div class="ms-login-card">
-          <!-- Barra de progreso animada de Microsoft (visible durante la carga de 1s) -->
-          <div id="ms-login-progress" class="hidden absolute top-0 left-0 right-0 h-[3px] bg-[#e5e5e5] overflow-hidden z-20">
-            <div class="ms-loading-bar-runner"></div>
-          </div>
-
-          <!-- Cabecera fija con el Logotipo Oficial de Microsoft a la izquierda -->
-          <div class="px-[44px] pt-[44px] pb-4 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <svg class="w-[21px] h-[21px]" viewBox="0 0 21 21" aria-hidden="true">
-                <rect x="0" y="0" width="10" height="10" fill="#f25022" />
-                <rect x="11" y="0" width="10" height="10" fill="#7fba00" />
-                <rect x="0" y="11" width="10" height="10" fill="#00a4ef" />
-                <rect x="11" y="11" width="10" height="10" fill="#ffb900" />
-              </svg>
-              <span class="text-[#737373] text-[19px] font-semibold tracking-tight leading-none">Microsoft</span>
-            </div>
-            <span class="text-[11px] text-[#737373] bg-[#f2f2f2] px-2 py-0.5 border border-[#e0e0e0]">
-              Microsoft Entra ID
-            </span>
-          </div>
-
-          <!-- Carrusel Horizontal de 3 Pasos con transición CSS translateX -->
-          <div class="w-full overflow-hidden">
-            <div id="ms-login-slider-track" class="ms-login-slider-track" style="transform: translateX(0%);">
-              
-              <!-- ==================== PASO 1: CORREO ELECTRÓNICO ==================== -->
-              <div class="ms-login-step-pane" id="ms-step-email">
-                <h1 class="text-[24px] font-semibold text-[#1b1b1b] leading-tight mt-1">Iniciar sesión</h1>
-                <p class="text-[13px] text-[#1b1b1b] mt-1 mb-4">Ir a Microsoft Azure Portal</p>
-
-                <div id="ms-email-error" class="hidden text-[13px] text-[#e81123] mb-2 leading-snug">
-                  Escriba una dirección de correo electrónico, un número de teléfono o un nombre de Skype válidos.
-                </div>
-
-                <form id="ms-form-email" novalidate>
-                  <input
-                    id="ms-input-email"
-                    type="email"
-                    autocomplete="username"
-                    value="alumno@ghostacademy.com"
-                    placeholder="Correo electrónico, teléfono o Skype"
-                    class="w-full py-1.5 text-[15px] text-[#1b1b1b] placeholder-[#666666] bg-transparent border-0 border-b border-[#666666] focus:border-[#0067b8] focus:border-b-2 focus:outline-none transition-colors"
-                  />
-
-                  <div class="mt-4 space-y-2.5 text-[13px]">
-                    <div class="text-[#1b1b1b]">
-                      ¿No tiene una cuenta?
-                      <button
-                        type="button"
-                        id="ms-btn-fill-demo-email"
-                        class="text-[#0067b8] hover:underline hover:text-[#004e8c] cursor-pointer ml-0.5"
-                      >
-                        Usar cuenta de laboratorio (alumno@ghostacademy.com)
-                      </button>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        id="ms-btn-cant-access"
-                        class="text-[#0067b8] hover:underline hover:text-[#004e8c] cursor-pointer"
-                      >
-                        ¿No puede acceder a su cuenta?
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="mt-8 flex justify-end">
-                    <button
-                      type="submit"
-                      id="ms-btn-next-email"
-                      class="bg-[#0067b8] hover:bg-[#005da6] active:bg-[#004e8c] text-white text-[15px] font-normal px-8 py-1.5 min-w-[108px] transition-colors cursor-pointer"
-                    >
-                      Siguiente
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <!-- ==================== PASO 2: ESCRIBIR CONTRASEÑA ==================== -->
-              <div class="ms-login-step-pane" id="ms-step-password">
-                <!-- Píldora superior con flecha para volver atrás y el correo introducido -->
-                <div class="flex items-center gap-1.5 mt-0.5 mb-2">
-                  <button
-                    type="button"
-                    id="ms-btn-back-to-email"
-                    title="Volver a introducir correo electrónico"
-                    class="w-6 h-6 rounded-full hover:bg-[#e5e5e5] flex items-center justify-center text-[#1b1b1b] transition-colors cursor-pointer shrink-0"
-                  >
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                      <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
-                    </svg>
-                  </button>
-                  <span id="ms-display-email-step2" class="text-[15px] text-[#1b1b1b] truncate">alumno@ghostacademy.com</span>
-                </div>
-
-                <h2 class="text-[24px] font-semibold text-[#1b1b1b] leading-tight mb-4">Escribir contraseña</h2>
-
-                <div id="ms-password-error" class="hidden text-[13px] text-[#e81123] mb-2 leading-snug">
-                  Escriba la contraseña de su cuenta de Microsoft o directorio educativo.
-                </div>
-
-                <form id="ms-form-password" novalidate>
-                  <input
-                    id="ms-input-password"
-                    type="password"
-                    autocomplete="current-password"
-                    value="AzureCloud2026!"
-                    placeholder="Contraseña"
-                    class="w-full py-1.5 text-[15px] text-[#1b1b1b] placeholder-[#666666] bg-transparent border-0 border-b border-[#666666] focus:border-[#0067b8] focus:border-b-2 focus:outline-none transition-colors"
-                  />
-
-                  <div class="mt-4 space-y-2 text-[13px]">
-                    <div>
-                      <button
-                        type="button"
-                        id="ms-btn-forgot-pwd"
-                        class="text-[#0067b8] hover:underline hover:text-[#004e8c] cursor-pointer"
-                      >
-                        He olvidado mi contraseña
-                      </button>
-                    </div>
-                    <div class="text-[12px] text-[#666666]">
-                      Entorno de laboratorio: no escriba su contraseña real. Sirve cualquier valor; no se guarda ni se envía.
-                    </div>
-                  </div>
-
-                  <div class="mt-8 flex justify-end">
-                    <button
-                      type="submit"
-                      id="ms-btn-submit-password"
-                      class="bg-[#0067b8] hover:bg-[#005da6] active:bg-[#004e8c] text-white text-[15px] font-normal px-8 py-1.5 min-w-[108px] transition-colors cursor-pointer disabled:opacity-60"
-                    >
-                      Iniciar sesión
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <!-- ==================== PASO 3: SIMULACIÓN MFA (DOBLE FACTOR) ==================== -->
-              <div class="ms-login-step-pane" id="ms-step-mfa">
-                <!-- Píldora superior con flecha para volver atrás y el correo -->
-                <div class="flex items-center gap-1.5 mt-0.5 mb-2">
-                  <button
-                    type="button"
-                    id="ms-btn-back-to-password"
-                    title="Volver al paso de contraseña"
-                    class="w-6 h-6 rounded-full hover:bg-[#e5e5e5] flex items-center justify-center text-[#1b1b1b] transition-colors cursor-pointer shrink-0"
-                  >
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                      <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
-                    </svg>
-                  </button>
-                  <span id="ms-display-email-step3" class="text-[15px] text-[#1b1b1b] truncate">alumno@ghostacademy.com</span>
-                </div>
-
-                <h2 class="text-[22px] font-semibold text-[#1b1b1b] leading-tight mb-2">
-                  Aprobar solicitud de inicio de sesión
-                </h2>
-
-                <!-- Notificación simulada de Microsoft Authenticator -->
-                <div class="bg-[#f8f9fa] border border-[#d2d0ce] p-3 mb-3 flex items-start gap-2.5">
-                  <div class="w-7 h-7 rounded bg-[#0067b8]/10 text-[#0067b8] flex items-center justify-center shrink-0 mt-0.5">
-                    <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h6zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H5z"/>
-                      <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                    </svg>
-                  </div>
-                  <div class="text-[12.5px] text-[#323130] leading-snug flex-1">
-                    <div>Se ha enviado una notificación a la app <strong>Microsoft Authenticator</strong> o escriba el código TOTP de 6 dígitos:</div>
-                    <div class="mt-1.5 flex items-center justify-between gap-2">
-                      <span class="font-mono text-[13px] font-bold text-[#0067b8] bg-[#e5f1fb] px-2 py-0.5 border border-[#b3d7f5]">
-                        Código OTP: <span id="ms-mfa-generated-code">482910</span>
-                      </span>
-                      <button
-                        type="button"
-                        id="ms-btn-approve-push"
-                        class="text-[11.5px] font-semibold text-[#0067b8] hover:underline cursor-pointer"
-                      >
-                        Aprobar desde app →
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div id="ms-mfa-error" class="hidden text-[13px] text-[#e81123] mb-2 leading-snug">
-                  Introduzca un código numérico de 6 dígitos válido para completar la verificación MFA.
-                </div>
-
-                <form id="ms-form-mfa" novalidate>
-                  <input
-                    id="ms-input-mfa-code"
-                    type="text"
-                    inputmode="numeric"
-                    maxlength="6"
-                    placeholder="Escribir código de 6 dígitos (ej. 482910)"
-                    class="w-full py-1.5 text-[15px] font-mono tracking-widest text-[#1b1b1b] placeholder-[#666666] placeholder:font-sans placeholder:tracking-normal bg-transparent border-0 border-b border-[#666666] focus:border-[#0067b8] focus:border-b-2 focus:outline-none transition-colors"
-                  />
-
-                  <label class="mt-3.5 flex items-center gap-2 text-[13px] text-[#1b1b1b] cursor-pointer select-none">
-                    <input type="checkbox" checked class="w-4 h-4 accent-[#0067b8]" />
-                    <span>No volver a mostrar esto durante 14 días</span>
-                  </label>
-
-                  <div class="mt-5 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      id="ms-btn-autofill-mfa"
-                      class="text-[12px] text-[#0067b8] hover:underline cursor-pointer"
-                    >
-                      Autocompletar 6 dígitos
-                    </button>
-                    <button
-                      type="submit"
-                      id="ms-btn-verify-mfa"
-                      class="bg-[#0067b8] hover:bg-[#005da6] active:bg-[#004e8c] text-white text-[15px] font-normal px-7 py-1.5 min-w-[108px] transition-colors cursor-pointer"
-                    >
-                      Verificar
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- Barra inferior clásica de "Opciones de inicio de sesión" de Microsoft -->
-        <div class="ms-login-options-card px-[44px] py-3 flex items-center justify-between hover:bg-[#fafafa] transition-colors">
-          <div class="flex items-center gap-3 text-[14px] text-[#1b1b1b]">
-            <svg class="w-5 h-5 text-[#666666]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM9.5 11L4 16.5V20h3.5l2-2v-2h2l1.5-1.5" />
-            </svg>
-            <span>Opciones de inicio de sesión</span>
-          </div>
-          <span class="text-[11px] text-[#737373]">SSO · FIDO2 · Authenticator</span>
-        </div>
+      <div class="w-full max-w-[460px] bg-[#1b1a19] border border-[#3b3a39] p-8 text-[#f3f2f1] shadow-[0_14px_38px_rgba(0,0,0,0.6)]">
+        <p class="text-[12px] uppercase tracking-widest text-[#50e6ff] mb-2">Simulador educativo</p>
+        <h1 id="azl-welcome-title" class="text-[26px] font-semibold mb-3">AzureLab</h1>
+        <p class="text-[14px] leading-relaxed text-[#d2d0ce] mb-3">
+          Laboratorio para practicar con una réplica del portal de Azure y de Cloud Shell. Todo funciona dentro de tu navegador.
+        </p>
+        <p class="text-[13px] leading-relaxed text-[#fce100] bg-[#323130] border-l-4 border-[#fce100] px-3 py-2 mb-4">
+          No es un servicio de Microsoft ni una página de inicio de sesión: aquí nunca se pide ninguna contraseña ni dato real.
+        </p>
+        <p class="text-[13px] text-[#a19f9d] mb-5">
+          Entrarás como el usuario de prácticas <span class="font-mono text-[#f3f2f1]">alumno@ghostacademy.com</span>.
+        </p>
+        <button
+          type="button"
+          id="azl-btn-enter"
+          class="w-full h-9 bg-[#0078d4] hover:bg-[#106ebe] text-white text-[14px] font-semibold"
+        >
+          Entrar al laboratorio
+        </button>
+        <p class="text-[11px] text-[#8a8886] mt-5">
+          Proyecto educativo independiente, sin relación con Microsoft. Azure es una marca de Microsoft.
+        </p>
       </div>
-
-      <!-- Pie de página oficial de login.microsoftonline.com -->
-      <footer class="w-full flex flex-wrap items-center justify-end gap-5 px-4 py-1 text-[12px] text-[#505050]">
-        <span>Simulador Educativo de Microsoft Azure</span>
-        <span class="hover:underline cursor-pointer">Términos de uso</span>
-        <span class="hover:underline cursor-pointer">Privacidad y cookies</span>
-        <span class="font-bold tracking-widest cursor-pointer">...</span>
-      </footer>
     </div>
 
     <!-- ==================== CONTENEDOR PRINCIPAL DEL PORTAL DE AZURE (OCULTO HASTA COMPLETAR LOGIN) ==================== -->
     <div id="azure-portal-app" class="h-screen w-screen overflow-hidden flex flex-col select-none" style="display: none;">
+    <div class="shrink-0 bg-[#323130] text-[#fce100] text-[11.5px] text-center px-3 py-[3px] border-b border-[#3b3a39]" role="note">
+      AzureLab · Simulador educativo: no es el portal de Microsoft. No escribas contraseñas ni datos reales.
+    </div>
 
     <!-- ==================== 1. BARRA SUPERIOR (AZURE TOP BAR #1b1a19) ==================== -->
     <header class="h-10 bg-[#1b1a19] border-b border-[#3b3a39] flex items-center justify-between shrink-0 z-40 relative">
@@ -7298,7 +7074,8 @@ Last login: ${escapeHtml(nowUtc)} from 10.0.250.4 (AzureBastionSubnet)</div>
                             <label for="bastion-ssh-password" class="block text-[11.5px] text-[#d2d0ce] mb-1">Contraseña SSH / Clave de administrador *</label>
                             <input
                               id="bastion-ssh-password"
-                              type="password"
+                              type="text"
+                              autocomplete="off"
                               value="${escapeHtml(targetVm.adminPassword || 'AzureLab2026!')}"
                               placeholder="Introduce la contraseña de la VM..."
                               class="w-full h-8 bg-[#111111] border border-[#3b3a39] px-3 text-[12px] text-white font-mono focus:border-[#0078d4] focus:outline-none"
@@ -14779,7 +14556,8 @@ Last login: ${escapeHtml(nowUtc)} from 10.0.250.4 (AzureBastionSubnet)</div>
                                 />
                                 <input
                                   id="input-kv-secret-value"
-                                  type="password"
+                                  type="text"
+                              autocomplete="off"
                                   placeholder="Valor secreto..."
                                   class="px-2.5 py-1.5 bg-[#1b1a19] border border-[#605e5c] text-[12px] text-white font-mono focus:border-[#0078d4] focus:outline-none"
                                 />
@@ -23344,7 +23122,8 @@ stages:
                                     </label>
                                     <input
                                       id="sql-query-login-pass"
-                                      type="password"
+                                      type="text"
+                              autocomplete="off"
                                       value="${escapeHtml(sqlLoginPassInput)}"
                                       class="w-full bg-[#252423] border border-[#484644] focus:border-[#0078d4] text-xs text-white px-2.5 py-1.5 rounded-sm font-mono outline-none"
                                     />
@@ -37647,7 +37426,7 @@ return {
         runAcademyValidationTick();
         setInterval(runAcademyValidationTick, 1000);
 
-        // ==================== 7. FLUJO DE AUTENTICACIÓN MICROSOFT ENTRA ID (login.microsoftonline.com) ====================
+        // ==================== 7. ENTRADA AL LABORATORIO (sin inicio de sesión) ====================
         const CURRENT_USER_STORAGE_KEY = 'currentUser';
         const loginOverlayEl = document.getElementById('ms-login-overlay');
         const portalAppEl = document.getElementById('azure-portal-app');
@@ -37862,7 +37641,7 @@ return {
           }, 400);
         });
 
-        // Botón Cerrar Sesión en la barra superior del Portal para volver a login.microsoftonline.com
+        // Botón Cerrar Sesión en la barra superior del Portal para volver a la portada del simulador
         document.getElementById('btn-topbar-logout')?.addEventListener('click', () => {
           localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
           if (portalAppEl) portalAppEl.style.display = 'none';
@@ -38116,7 +37895,12 @@ return {
           console.warn('Error leyendo currentUser de localStorage:', err);
         }
 
-        // También lanzar el tour cuando el usuario completa el flujo MFA de login.microsoftonline.com
+        // Entrada al laboratorio desde la portada (sin inicio de sesión)
+        document.getElementById('azl-btn-enter')?.addEventListener('click', () => {
+          enterPortalAndCheckTour('alumno@ghostacademy.com');
+        });
+
+        // También lanzar el tour cuando el usuario entra al laboratorio
         document.getElementById('ms-btn-approve-push')?.addEventListener('click', () => {
           setTimeout(checkAndLaunchFirstTimeTour, 550);
         });
@@ -38248,12 +38032,12 @@ return {
         const syncDocumentTitle = () => {
           const loginVisible = loginEl && loginEl.style.display !== 'none';
           if (loginVisible) {
-            document.title = 'Iniciar sesión en su cuenta';
+            document.title = 'AzureLab · Simulador educativo';
             return;
           }
           const last = crumbsEl?.lastElementChild;
           const label = (last?.textContent || 'Inicio').trim();
-          document.title = `${label} - Microsoft Azure`;
+          document.title = `${label} · AzureLab (simulador)`;
         };
         if (crumbsEl) new MutationObserver(syncDocumentTitle).observe(crumbsEl, { childList: true, subtree: true, characterData: true });
         if (loginEl) new MutationObserver(syncDocumentTitle).observe(loginEl, { attributes: true, attributeFilter: ['style'] });
