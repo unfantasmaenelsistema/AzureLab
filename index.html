@@ -1699,7 +1699,7 @@
               <span class="text-[#a19f9d] block text-[10px] uppercase tracking-wider">Directorio (Tenant) Actual</span>
               <span id="settings-current-tenant-label" class="font-semibold text-[#50e6ff] font-mono">GhostAcademy (ghostacademy.com)</span>
             </div>
-            <span id="settings-current-tenant-id" class="text-[10px] font-mono text-[#a19f9d]">72f988bf-86f1-41af</span>
+            <span id="settings-current-tenant-id" class="text-[10px] font-mono text-[#a19f9d]">6a3b9c2e-2026-4f1a</span>
           </div>
 
           <div class="space-y-2">
@@ -2112,18 +2112,18 @@
         <!-- Lista de Tareas del Laboratorio -->
         <ul id="academy-task-list" class="space-y-2 text-[12px]"></ul>
 
-        <!-- Acciones de Evaluación Docente: Entregar Examen Firmado (SHA-256) y Ver Registro de Actividad -->
+        <!-- Acciones de Evaluación Docente: Entregar Examen (informe con huella SHA-256) y Ver Registro de Actividad -->
         <div class="pt-3 mt-2 border-t border-[#3b3a39] space-y-2">
           <button
             id="btn-submit-exam-report"
             type="button"
             class="w-full py-2 px-3 bg-[#0078d4] hover:bg-[#106ebe] text-white font-semibold text-[12px] flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
-            title="Genera y descarga informe_alumno_ghostacademy.json con puntuación final, trazabilidad de Activity Log y firma SHA-256"
+            title="Genera y descarga informe_alumno_ghostacademy.json con puntuación final, trazabilidad de Activity Log y huella de integridad SHA-256 (no es una firma digital)"
           >
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
             </svg>
-            <span>Entregar Examen (Exportar Informe Firmado)</span>
+            <span>Entregar Examen (Exportar Informe)</span>
           </button>
           <button
             id="btn-open-activity-log-from-academy"
@@ -2298,7 +2298,7 @@
             id: DEFAULT_SUBSCRIPTION_ID,
             name: 'Azure for Students - Lab',
             state: 'Enabled',
-            tenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+            tenantId: '6a3b9c2e-2026-4f1a-9d7c-ab12cd34ef56'
           },
           resourceGroups: [
             {
@@ -4231,7 +4231,7 @@ return {
             {
               id: 'ad-sys-sync-001',
               displayName: 'Sincronización de AD',
-              userPrincipalName: 'Sync_ADConnect_72f988bf@ghostacademy.com',
+              userPrincipalName: 'Sync_ADConnect_6a3b9c2e@ghostacademy.com',
               mail: 'adconnect.sync@ghostacademy.com',
               jobTitle: 'Directory Synchronization Service Account',
               department: 'Microsoft Entra Connect Sync',
@@ -4290,7 +4290,7 @@ return {
               operation: 'Microsoft.Authorization/roleAssignments/write',
               armOperation: 'Microsoft.Authorization/roleAssignments/write',
               status: 'Succeeded',
-              user: 'Sincronización de AD (Sync_ADConnect_72f988bf@ghostacademy.com)',
+              user: 'Sincronización de AD (Sync_ADConnect_6a3b9c2e@ghostacademy.com)',
               resourceType: 'Microsoft.Authorization/roleAssignments',
               severity: 'Informativo',
               target: '/subscriptions/' + subId + '/providers/Microsoft.Authorization/roleAssignments/sys-rbac-sync',
@@ -4457,6 +4457,9 @@ return {
                 }
                 if (!Array.isArray(parsed.aiServices) || parsed.aiServices.length === 0) {
                   parsed.aiServices = defaults.aiServices || [];
+                }
+                if (parsed.subscription && parsed.subscription.tenantId === '72f988bf-' + '86f1-41af-91ab-2d7cd011db47') {
+                  parsed.subscription.tenantId = '6a3b9c2e-2026-4f1a-9d7c-ab12cd34ef56';
                 }
                 // Garantizar que todas las VMs tengan adminUsername, adminPassword, healthState y stoppedCycles definidos
                 parsed.virtualMachines.forEach((vm) => {
@@ -6198,7 +6201,22 @@ return {
         /**
          * 2. CREADOR DE SUBRED EN VNET (Con validación ARMError de formato y solapamiento CIDR)
          */
-        const createSubnetInVnet = ({ vnetName, subnetName, addressPrefix }) => {
+        // Resuelve el NSG indicado con --network-security-group (nombre o id ARM). Sin él, la subred no lleva NSG (como en Azure).
+        const resolveSubnetNsgName = (rawNsg) => {
+          const wanted = String(rawNsg || '').trim().split('/').pop();
+          if (!wanted) return { ok: true, name: null };
+          const found = (window.azureState?.nsgs || []).find((n) => n.name.toLowerCase() === wanted.toLowerCase());
+          if (!found) {
+            return {
+              ok: false,
+              message: `(ResourceNotFound) The Resource 'Microsoft.Network/networkSecurityGroups/${wanted}' was not found.`
+            };
+          }
+          return { ok: true, name: found.name };
+        };
+        window.resolveSubnetNsgName = resolveSubnetNsgName;
+
+        const createSubnetInVnet = ({ vnetName, subnetName, addressPrefix, nsg }) => {
           const correlationId = generateArmCorrelationId();
           const perm = checkPermissions('Microsoft.Network/virtualNetworks/subnets/write');
           if (!perm.allowed) {
@@ -6306,7 +6324,7 @@ return {
           const subnetObj = {
             name: cleanName,
             addressPrefix: cleanPrefix,
-            nsg: cleanName === 'AzureBastionSubnet' ? null : vnet.subnets[0]?.nsg || 'nsg-core-firewall'
+            nsg: cleanName === 'AzureBastionSubnet' ? null : nsg || null
           };
 
           if (existingIdx >= 0) {
@@ -10939,8 +10957,8 @@ Last login: ${escapeHtml(nowUtc)} from 10.0.250.4 (AzureBastionSubnet)</div>
                 <div class="flex items-center gap-2">
                   <span class="w-6 h-6 rounded bg-[#0078d4] flex items-center justify-center text-white text-xs font-bold shrink-0">✉</span>
                   <div>
-                    <div class="text-[11px] font-bold text-white leading-tight">Notificación de Correo · Outlook / SO</div>
-                    <div class="text-[10px] text-[#a19f9d] font-mono">De: azure-noreply@microsoft.com</div>
+                    <div class="text-[11px] font-bold text-white leading-tight">Alerta de Azure Monitor (correo simulado)</div>
+                    <div class="text-[10px] text-[#a19f9d] font-mono">De: alertas@ghostacademy.com</div>
                   </div>
                 </div>
                 <button type="button" data-dismiss-email-toast class="text-[#a19f9d] hover:text-white text-xs px-1 cursor-pointer">✕</button>
@@ -11849,7 +11867,7 @@ Last login: ${escapeHtml(nowUtc)} from 10.0.250.4 (AzureBastionSubnet)</div>
                                     <!-- Badge de Firewall NSG Protegiendo la Subred -->
                                     <div class="px-2.5 py-1.5 bg-[#1b1a19] border-l-2 border-[#6ccb5f] flex items-center justify-between text-[11px]">
                                       <span class="text-[#a19f9d]">Firewall NSG:</span>
-                                      <span class="font-mono text-[#6ccb5f] font-semibold">${escapeHtml(subnet.nsg || activeNsg?.name || 'nsg-core-firewall')}</span>
+                                      <span class="font-mono ${subnet.nsg ? 'text-[#6ccb5f]' : 'text-[#a19f9d]'} font-semibold">${escapeHtml(subnet.nsg || 'Ninguno')}</span>
                                     </div>
 
                                     <!-- Conector hacia las VMs alojadas en esta Subred -->
@@ -11891,7 +11909,7 @@ Last login: ${escapeHtml(nowUtc)} from 10.0.250.4 (AzureBastionSubnet)</div>
                                                         <span class="text-[#50e6ff]">${escapeHtml(vm.publicIpAddress || '')}</span>
                                                       </div>
                                                       <div class="text-[10px] font-mono text-[#a19f9d] mt-0.5">
-                                                        NSG NIC: ${escapeHtml(vm.nsgName || vm.networkSecurityGroup || subnet.nsg || 'nsg-core-firewall')}
+                                                        NSG NIC: ${escapeHtml(vm.nsgName || vm.networkSecurityGroup || 'Ninguno')}
                                                       </div>
                                                     </div>
                                                   </div>
@@ -26016,7 +26034,7 @@ return {
               exportedAt,
               student: {
                 email: summary.studentEmail,
-                subscription: 'Azure Pass Educativo (Sub-ID: 8f9c2a1b-44e1-4d00-9a12-ghostacademy)'
+                subscription: `${window.azureState.subscription?.name || 'Azure for Students - Lab'} (${window.azureState.subscription?.id || ''})`
               },
               evaluation: {
                 finalScore: `${summary.finalScorePercentage}/100`,
@@ -26051,17 +26069,19 @@ return {
               }))
             };
 
-            // Firma criptográfica SHA-256 con salt de verificación docente para evitar manipulación del JSON
+            // Huella SHA-256 de integridad. OJO: se calcula en el navegador con un texto fijo visible en el código,
+            // así que detecta cambios accidentales pero NO impide que alguien edite la nota y recalcule el hash.
+            // Una firma real necesitaría una clave secreta fuera del alcance del alumno (firma digital o HMAC en un servidor).
             const canonicalString = JSON.stringify(reportPayloadWithoutSignature) + '|GHOST_ACADEMY_SALT_2025_CTF_VERIFY';
             const sha256Hash = await computeSha256Hex(canonicalString);
 
             const signedReport = {
               ...reportPayloadWithoutSignature,
-              cryptographicSeal: {
+              integrityFingerprint: {
                 algorithm: 'SHA-256',
                 integrityHash: sha256Hash,
                 verificationNote:
-                  'Cualquier modificación manual de finalScore, tasksCompleted o activityLogs invalidará el hash SHA-256 al ser verificado por el profesor.'
+                  'Huella de integridad calculada en el navegador: detecta cambios accidentales en el JSON, pero no es una firma digital. Quien conozca cómo se calcula puede recalcularla; para una entrega a prueba de manipulaciones haría falta firmar en un servidor.'
               }
             };
 
@@ -30901,7 +30921,9 @@ return {
                   '--address-prefixes': { key: 'addressPrefix', type: 'string' },
                   '--subnet-name': { key: 'subnetName', type: 'string' },
                   '--subnet-prefix': { key: 'subnetPrefix', type: 'string' },
-                  '--subnet-prefixes': { key: 'subnetPrefix', type: 'string' }
+                  '--subnet-prefixes': { key: 'subnetPrefix', type: 'string' },
+                  '--network-security-group': { key: 'nsg', type: 'string' },
+                  '--nsg': { key: 'nsg', type: 'string' }
                 }
               },
               'az network vnet list': {
@@ -31214,7 +31236,9 @@ return {
                   '-n': { key: 'name', type: 'string' },
                   '--name': { key: 'name', type: 'string' },
                   '--address-prefixes': { key: 'addressPrefixes', type: 'string' },
-                  '--address-prefix': { key: 'addressPrefixes', type: 'string' }
+                  '--address-prefix': { key: 'addressPrefixes', type: 'string' },
+                  '--network-security-group': { key: 'nsg', type: 'string' },
+                  '--nsg': { key: 'nsg', type: 'string' }
                 }
               },
               'az network bastion create': {
@@ -31707,6 +31731,34 @@ return {
                 }
               }
 
+              // Un NSG del grupo que esté asociado a una subred de una VNet de OTRO grupo bloquea el borrado (InUseNetworkSecurityGroupCannotBeDeleted)
+              {
+                const targetLower = targetName.toLowerCase();
+                const nsgsInGroup = (state.nsgs || []).filter(
+                  (n) => String(n.resourceGroup || '').toLowerCase() === targetLower
+                );
+                for (const nsgItem of nsgsInGroup) {
+                  for (const vn of state.vnets || []) {
+                    if (String(vn.resourceGroup || '').toLowerCase() === targetLower) continue;
+                    const usedBy = (vn.subnets || []).find(
+                      (sn) => String(sn.nsg || '').toLowerCase() === nsgItem.name.toLowerCase()
+                    );
+                    if (usedBy) {
+                      this.logActivity?.('Microsoft.Resources/subscriptions/resourceGroups/delete', targetName, 'Failed');
+                      return {
+                        action: 'PRINT',
+                        status: 'error',
+                        async: true,
+                        output:
+                          `(InUseNetworkSecurityGroupCannotBeDeleted) Network security group /subscriptions/${state.subscription?.id}/resourceGroups/${targetName}/providers/Microsoft.Network/networkSecurityGroups/${nsgItem.name} cannot be deleted because it is in use by the following resources: /subscriptions/${state.subscription?.id}/resourceGroups/${vn.resourceGroup}/providers/Microsoft.Network/virtualNetworks/${vn.name}/subnets/${usedBy.name}.\n` +
+                          `Code: InUseNetworkSecurityGroupCannotBeDeleted\n` +
+                          `Pista: quita antes la asociación (az network vnet subnet update --network-security-group "") o mueve la subred a otro NSG.`
+                      };
+                    }
+                  }
+                }
+              }
+
               const removed = state.resourceGroups.splice(idx, 1)[0];
               if (!removed || !removed.name) {
                 return {
@@ -31982,11 +32034,13 @@ return {
                     (vm) => vm.resourceGroup.toLowerCase() === String(args.resourceGroup).toLowerCase()
                   )
                 : state.virtualMachines;
+              // Azure nunca devuelve la contraseña del administrador: se omite de la salida
+              const safeList = list.map(({ adminPassword, ...vm }) => vm);
               return {
                 action: 'PRINT',
                 status: 'success',
                 async: true,
-                output: JSON.stringify(list, null, 2)
+                output: JSON.stringify(safeList, null, 2)
               };
             }
 
@@ -32065,6 +32119,11 @@ return {
                 };
               }
 
+              const vnetSubnetNsg = window.resolveSubnetNsgName(args.nsg);
+              if (!vnetSubnetNsg.ok) {
+                return { action: 'PRINT', status: 'error', async: true, output: vnetSubnetNsg.message };
+              }
+
               const newVnet = {
                 id: `/subscriptions/${state.subscription.id}/resourceGroups/${rgObj.name}/providers/Microsoft.Network/virtualNetworks/${vnetName}`,
                 name: vnetName,
@@ -32076,7 +32135,7 @@ return {
                   {
                     name: subnetName,
                     addressPrefix: subnetPrefix,
-                    nsg: state.nsgs?.[0]?.name || 'nsg-core-firewall'
+                    nsg: vnetSubnetNsg.name
                   }
                 ]
               };
@@ -32329,6 +32388,21 @@ return {
               const direction = rawDir === 'outbound' ? 'Outbound' : 'Inbound';
               const protocol = String(args.protocol || 'TCP').toUpperCase();
               const port = String(args.port || '*');
+
+              const priorityClash = (targetNsg.rules || []).find(
+                (r) =>
+                  r.direction === direction &&
+                  Number(r.priority) === priorityNum &&
+                  String(r.name).toLowerCase() !== ruleName.toLowerCase()
+              );
+              if (priorityClash) {
+                return {
+                  action: 'PRINT',
+                  status: 'error',
+                  async: true,
+                  output: `(SecurityRuleConflict) Security rule '${ruleName}' conflicts with rule '${priorityClash.name}'. Rules cannot have the same Priority and Direction. To learn more, see aka.ms/nsgrules.`
+                };
+              }
 
               const newRule = {
                 name: ruleName,
@@ -33440,10 +33514,15 @@ return {
 
             // 27. az network vnet subnet create
             if (commandKey === 'az network vnet subnet create') {
+              const subnetNsg = window.resolveSubnetNsgName(args.nsg);
+              if (!subnetNsg.ok) {
+                return { action: 'PRINT', status: 'error', async: true, output: subnetNsg.message };
+              }
               const res = createSubnetInVnet({
                 vnetName: args.vnetName,
                 subnetName: args.name,
-                addressPrefix: args.addressPrefixes
+                addressPrefix: args.addressPrefixes,
+                nsg: subnetNsg.name
               });
               if (!res.ok) {
                 return {
@@ -35953,7 +36032,7 @@ return {
 
         const TENANT_PROFILES = {
           GhostAcademy: {
-            id: '72f988bf-86f1-41af-91ab-2d7cd011db47',
+            id: '6a3b9c2e-2026-4f1a-9d7c-ab12cd34ef56',
             name: 'GhostAcademy',
             domain: 'ghostacademy.com',
             defaultUser: 'alumno@ghostacademy.com',
@@ -37430,24 +37509,6 @@ return {
         const CURRENT_USER_STORAGE_KEY = 'currentUser';
         const loginOverlayEl = document.getElementById('ms-login-overlay');
         const portalAppEl = document.getElementById('azure-portal-app');
-        const sliderTrackEl = document.getElementById('ms-login-slider-track');
-        const progressEl = document.getElementById('ms-login-progress');
-
-        const inputEmailEl = document.getElementById('ms-input-email');
-        const inputPasswordEl = document.getElementById('ms-input-password');
-        const inputMfaCodeEl = document.getElementById('ms-input-mfa-code');
-        const mfaGeneratedCodeEl = document.getElementById('ms-mfa-generated-code');
-
-        const emailErrorEl = document.getElementById('ms-email-error');
-        const passwordErrorEl = document.getElementById('ms-password-error');
-        const mfaErrorEl = document.getElementById('ms-mfa-error');
-
-        const displayEmailStep2El = document.getElementById('ms-display-email-step2');
-        const displayEmailStep3El = document.getElementById('ms-display-email-step3');
-
-        let capturedLoginEmail = 'alumno@ghostacademy.com';
-        let currentMfaOtpCode = '482910';
-
         const computeInitialsFromEmail = (emailStr) => {
           const clean = String(emailStr || 'alumno@ghostacademy.com').trim();
           const localPart = clean.split('@')[0] || 'AG';
@@ -37494,159 +37555,11 @@ return {
           renderAll();
         };
 
-        const slideToLoginStep = (stepIndex) => {
-          if (!sliderTrackEl) return;
-          // 0 = Correo (0%), 1 = Contraseña (-33.333333%), 2 = MFA (-66.666667%)
-          const offsetPercent = -(stepIndex * 33.333333);
-          sliderTrackEl.style.transform = `translateX(${offsetPercent}%)`;
-
-          setTimeout(() => {
-            if (stepIndex === 0) inputEmailEl?.focus();
-            if (stepIndex === 1) inputPasswordEl?.focus();
-            if (stepIndex === 2) inputMfaCodeEl?.focus();
-          }, 360);
-        };
-
-        const regenerateMfaCode = () => {
-          currentMfaOtpCode = String(Math.floor(100000 + Math.random() * 900000));
-          if (mfaGeneratedCodeEl) {
-            mfaGeneratedCodeEl.textContent = currentMfaOtpCode;
-          }
-        };
-
-        // Paso 1: Validar Correo y deslizar con translateX al Paso 2 (Contraseña)
-        document.getElementById('ms-form-email')?.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const rawEmail = (inputEmailEl?.value || '').trim();
-          const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail);
-
-          if (!rawEmail || !isValidEmail) {
-            emailErrorEl?.classList.remove('hidden');
-            inputEmailEl?.focus();
-            return;
-          }
-
-          emailErrorEl?.classList.add('hidden');
-          capturedLoginEmail = rawEmail;
-
-          if (displayEmailStep2El) displayEmailStep2El.textContent = capturedLoginEmail;
-          if (displayEmailStep3El) displayEmailStep3El.textContent = capturedLoginEmail;
-
-          slideToLoginStep(1);
-        });
-
-        document.getElementById('ms-btn-fill-demo-email')?.addEventListener('click', () => {
-          if (inputEmailEl) {
-            inputEmailEl.value = 'alumno@ghostacademy.com';
-            emailErrorEl?.classList.add('hidden');
-            inputEmailEl.focus();
-          }
-        });
-
-        document.getElementById('ms-btn-cant-access')?.addEventListener('click', () => {
-          if (inputEmailEl) {
-            inputEmailEl.value = 'alumno@ghostacademy.com';
-            emailErrorEl?.classList.add('hidden');
-          }
-        });
-
-        // Botón Flecha Atrás desde Contraseña -> Correo
-        document.getElementById('ms-btn-back-to-email')?.addEventListener('click', () => {
-          passwordErrorEl?.classList.add('hidden');
-          slideToLoginStep(0);
-        });
-
-        // Paso 2: Validar Contraseña, simular carga de 1 segundo (1000ms) y deslizar a MFA (Paso 3)
-        document.getElementById('ms-form-password')?.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const rawPwd = (inputPasswordEl?.value || '').trim();
-          if (!rawPwd) {
-            passwordErrorEl?.classList.remove('hidden');
-            inputPasswordEl?.focus();
-            return;
-          }
-
-          passwordErrorEl?.classList.add('hidden');
-          const submitPwdBtn = document.getElementById('ms-btn-submit-password');
-          if (submitPwdBtn) {
-            submitPwdBtn.disabled = true;
-            submitPwdBtn.textContent = 'Iniciando sesión...';
-          }
-          progressEl?.classList.remove('hidden');
-
-          setTimeout(() => {
-            progressEl?.classList.add('hidden');
-            if (submitPwdBtn) {
-              submitPwdBtn.disabled = false;
-              submitPwdBtn.textContent = 'Iniciar sesión';
-            }
-            regenerateMfaCode();
-            if (inputMfaCodeEl) inputMfaCodeEl.value = '';
-            mfaErrorEl?.classList.add('hidden');
-            slideToLoginStep(2);
-          }, 1000);
-        });
-
-        document.getElementById('ms-btn-forgot-pwd')?.addEventListener('click', () => {
-          if (inputPasswordEl) {
-            inputPasswordEl.value = 'AzureCloud2026!';
-            passwordErrorEl?.classList.add('hidden');
-            inputPasswordEl.focus();
-          }
-        });
-
-        // Botón Flecha Atrás desde MFA -> Contraseña
-        document.getElementById('ms-btn-back-to-password')?.addEventListener('click', () => {
-          mfaErrorEl?.classList.add('hidden');
-          slideToLoginStep(1);
-        });
-
-        // Autocompletar código MFA de 6 dígitos
-        document.getElementById('ms-btn-autofill-mfa')?.addEventListener('click', () => {
-          if (inputMfaCodeEl) {
-            inputMfaCodeEl.value = currentMfaOtpCode;
-            mfaErrorEl?.classList.add('hidden');
-            inputMfaCodeEl.focus();
-          }
-        });
-
-        // Simular aprobación directa en la app Microsoft Authenticator (Notificación Push)
-        document.getElementById('ms-btn-approve-push')?.addEventListener('click', () => {
-          if (inputMfaCodeEl) {
-            inputMfaCodeEl.value = currentMfaOtpCode;
-          }
-          mfaErrorEl?.classList.add('hidden');
-          progressEl?.classList.remove('hidden');
-          setTimeout(() => {
-            progressEl?.classList.add('hidden');
-            enterAzurePortalWithUser(capturedLoginEmail);
-          }, 450);
-        });
-
-        // Paso 3: Verificar código MFA de 6 dígitos y redirigir al Portal de Azure
-        document.getElementById('ms-form-mfa')?.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const code = (inputMfaCodeEl?.value || '').trim();
-          if (!/^\d{6}$/.test(code)) {
-            mfaErrorEl?.classList.remove('hidden');
-            inputMfaCodeEl?.focus();
-            return;
-          }
-
-          mfaErrorEl?.classList.add('hidden');
-          progressEl?.classList.remove('hidden');
-          setTimeout(() => {
-            progressEl?.classList.add('hidden');
-            enterAzurePortalWithUser(capturedLoginEmail);
-          }, 400);
-        });
-
         // Botón Cerrar Sesión en la barra superior del Portal para volver a la portada del simulador
         document.getElementById('btn-topbar-logout')?.addEventListener('click', () => {
           localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
           if (portalAppEl) portalAppEl.style.display = 'none';
           if (loginOverlayEl) loginOverlayEl.style.display = 'flex';
-          slideToLoginStep(0);
         });
 
         // ==================== 8. MOTOR DE GUIDED TOUR (TOUR DE BIENVENIDA EN VANILLA JS) ====================
@@ -37900,13 +37813,6 @@ return {
           enterPortalAndCheckTour('alumno@ghostacademy.com');
         });
 
-        // También lanzar el tour cuando el usuario entra al laboratorio
-        document.getElementById('ms-btn-approve-push')?.addEventListener('click', () => {
-          setTimeout(checkAndLaunchFirstTimeTour, 550);
-        });
-        document.getElementById('ms-form-mfa')?.addEventListener('submit', () => {
-          setTimeout(checkAndLaunchFirstTimeTour, 500);
-        });
       })();
     </script>
 
